@@ -41,6 +41,8 @@ const Header = () => {
   };
 
   const handleCloseUserMenu = (setting) => {
+
+    console.log(setting)
     setAnchorElUser(null);
     if (setting === "My Profile") {
       router.push("/profile");

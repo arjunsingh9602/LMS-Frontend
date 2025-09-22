@@ -1,7 +1,7 @@
 'use client'
 
-import React , { useEffect, useState } from "react";
-import CreateProfile from "@/components/Profile/Profile/Create/Create";
+import  { useEffect, useState } from "react";
+
 
 import {
   Card,
@@ -20,7 +20,7 @@ import {
   
 } from "@mui/material";
 import Cookies from "js-cookie";
-import EditProfile from "@/components/Profile/Profile/Edit/Edit";
+
 import CommonDialog from "@/components/CommonDialog/CommonDialog";
 import {ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,6 +28,8 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import Layout from "@/components/Layout";
+import CreateProfile from "@/components/Profile/Create/Create";
+import EditProfile from "@/components/Profile/Edit/Edit";
 
 
 
@@ -185,7 +187,7 @@ const handleEditProfile = ()=>
       
         <Grid size={{xs:12, md:4}}>   
           <Box display="flex" alignItems="center">
-            <Avatar sx={{ width: 80, height: 80, mr: 2, background:"#d2d2d2", p:"4px" }} src={formData.profilePhoto}/>
+           <Avatar sx={{ width: 80, height: 80, mr: 2, background:"#d2d2d2", p:"4px" }} src={formData.profilePhoto || ''}/>
             <Box className="profile_active">
               <Typography fontWeight="bold">Super Admin</Typography>
               <Button

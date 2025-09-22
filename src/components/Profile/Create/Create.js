@@ -1,359 +1,333 @@
 'use client'
 
-// src/components/Create/Create.js
-
-import React, { useState } from "react";
+import React , { useEffect, useState } from "react";
 import {
-  Card,
-  CardContent,
-  TextField,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
-  Typography,
-  Button,
-  Box,
-  Grid,
-  useMediaQuery,
-  FormControl,
-  FormLabel,
-  CircularProgress,
+  Card,
+  CardContent,
+  Button,
+  TextField,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  Typography,
+  Box,
+  Grid,
+  Avatar,
+  FormControl,
+  FormLabel
 } from "@mui/material";
+import Cookies from "js-cookie";
 
+import CommonDialog from "@/components/CommonDialog/CommonDialog";
+import {ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import {  toast } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
-import Cookies from 'js-cookie';
-
+import Layout from "@/components/Layout";
+import CreateProfile from "@/components/Profile/Create/Create";
+import EditProfile from "@/components/Profile/Edit/Edit";
 
 const schema = yup.object().shape({
-
-  profilePhoto: yup
-  .mixed()
-  .test("required", "Profile Photo is required", (value) => {
-  return value && value.length > 0;
-  }),
-  mobileNo: yup
-  .string()
-  .required("Mobile number is required")
-  .matches(/^[0-9]{10}$/, "Mobile number must be exactly 10 digits"),
-  email: yup
-  .string()
-  .required("Email ID is required")
-  .email("Invalid email format"),
-  address: yup.string().required("Address is required"),
-  dob: yup.string().required("Date of Birth is required"),
-  name: yup.string().required("Name is required"),
-  gender: yup.string().required("Gender is required"),
-  password: yup.string().required("Password is required"),
-  confirmpassword: yup.string()
-    .oneOf([yup.ref("password")], "Passwords must match")
-    .required("Confirm password is required")
-
+  profilePhoto: yup.mixed(),
+  mobileNo: yup.string(),
+  email: yup.string(),
+  address: yup.string(),
+  dob: yup.string(),
+  name: yup.string(),
+  gender: yup.string(),
 });
 
+const Profile = () => {
+  const {
+    register,
+    reset,
+  } = useForm({ 
+    resolver: yupResolver(schema),
+});
 
+  const [profileId, setProfileId] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [gender, setGender]=useState([])
+  const [openData, setOpenData] =useState(false)
+  const [editShow, setEditShow] =useState(false)
+  const [editData, setEditData] = useState(null);
+  const [loading, setLoading] = useState(true)
+  const [formData, setformData] =useState([])
 
-const CreateProfile = ({handleCreate, handleClose}) => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const profile = localStorage.getItem("profileId");
+        if (profile) {
+          const parsedProfile = JSON.parse(profile);
+          setProfileId(parsedProfile);
+          setEditMode(true);
+        }
+      } catch (error) {
+        console.error('Error reading profileId from localStorage:', error);
+      }
+    }
+  }, []);
 
+  const handleClose=()=>
+  {
+     setOpenData(false);
+     setEditShow(false);
+  }
 
-  const isSmScreen = useMediaQuery("(max-width:768px)");
+  const token = Cookies.get("token");
+  const Base_url = process.env.NEXT_PUBLIC_BASE_URL;
 
-  const token = Cookies.get('token');
+  const options = {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  };
 
-  const Base_url = process.env.NEXT_PUBLIC_BASE_URL;
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const response = await fetch(`${Base_url}/profile/${profileId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+  
+        const result = await response.text();
+        const res = JSON.parse(result);
+  
+        if (res.status === "success") {
+          setformData(res.data)
+          setGender(res.data.gender)
+          setEditData(res.data)
+          setEditMode(true)
 
-  const [loading, setLoading] = useState(false)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem("profilePhoto", JSON.stringify(res.data.profilePhoto))
+          }
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({ resolver: yupResolver(schema),
-  });
+          reset({
+            name: res.data.name,
+            gender: res.data.gender,
+            dob: res.data.dob ? new Date(res.data.dob).toISOString().split("T")[0] : "",
+            mobileNo: res.data.mobileNo,
+            email: res.data.email,
+            address: res.data.address,
+            });        
+        }
+        res.status==="error" && typeof window !== 'undefined' && localStorage.clear()
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching staff data:", error);
+      }
+    };
+  
+    if (loading && profileId) {
+      fetchProfileData();
+    }
+  }, [loading, profileId]);
 
+  const handleCreateProfile = (e) => {
+    setOpenData(true);
+  }
 
-  const onSubmit = (data) => {
-    
-    setLoading(true)
+  const handleUpdate = (data) => {
+    setLoading(data)
+  };
 
-   const formdata = new FormData();
-   formdata.append("profilePhoto", data.profilePhoto[0]);
-   formdata.append("mobileNo", data.mobileNo);
-   formdata.append("address", data.address);
-   formdata.append("dob", data.dob);
-   formdata.append("name", data.name);
-   formdata.append("email", data.email);
-   formdata.append("gender", data.gender);
-   formdata.append("password", data.password);
+  const handleCreate =  (data) => {
+     setLoading(data)
+  };
 
-   const requestOptions = {
-     method: "POST",
-     body: formdata,
-     headers: {
-       Authorization: `Bearer ${token}`, 
-      },
-   };
+  const handleEditProfile = ()=> {
+    setEditShow(true)
+  }
 
-   fetch(`${Base_url}/profile`, requestOptions)
-     .then((response) => response.text())
+  return (
+     <>
+     {!loading && <>
+      <Layout>
+      <ToastContainer/>
+      <Box className="container overflow">
+        <Card sx={{ mb: 4}}>
+          <CardContent>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={4}>   
+              <Box display="flex" alignItems="center">
+                <Avatar sx={{ width: 80, height: 80, mr: 2, background:"#d2d2d2", p:"4px" }} src={formData.profilePhoto || ''}/>
+                <Box className="profile_active">
+                  <Typography fontWeight="bold">Super Admin</Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{
+                      borderRadius: '20px', 
+                      textTransform: 'none',        
+                      fontSize: '12px',
+                      padding: '4px 12px',
+                      minWidth: 'auto',             
+                      boxShadow: 'none',            
+                    }}
+                    color="primary"
+                  >
+                    Active
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
 
-     .then((result) => {
+            <Grid item xs={12} md={8}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Typography color="textSecondary" fontWeight="bold">
+                  ☎ Mobile No.: <span style={{fontSize:"14px", color:"#000"}}>{formData.mobileNo}</span>
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography color="textSecondary" fontWeight="bold">
+                    📅 Email Id: <span style={{fontSize:"14px", color:"#000"}}>{formData.email}</span>
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Typography color="textSecondary" fontWeight="bold">
+                  📍Address: <span style={{fontSize:"14px", color:"#000"}}>{formData.address}</span>
+                  </Typography>
+                </Grid> 
+                <Grid item xs={12} sm={6}>
+                  <Typography color="textSecondary" fontWeight="bold">
+                  📠 Date of Birth: <span style={{fontSize:"14px", color:"#000"}}>{ formData.dob ? new Date(formData.dob).toLocaleDateString('en-IN', options):null}</span>
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+          </CardContent>
+        </Card>
 
-       const res = JSON.parse(result)
+        <Card>
+          <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Box>
+              <Typography variant="h6">Personal Details:</Typography>
+            </Box>
+            <Box display="flex" gap={2}>
+              {editMode ? 
+              <Button variant="contained" 
+                className="primary_button" 
+                size="small" 
+                sx={{ textTransform: 'none', fontSize: '12px', padding: '4px 12px'}}
+                onClick={handleEditProfile}>
+                  Edit
+                </Button>
+                : <Button variant="contained" 
+                className="primary_button" 
+                size="small" 
+                sx={{ textTransform: 'none', fontSize: '12px', padding: '4px 12px'}}
+                onClick={handleCreateProfile}>
+                Create
+                </Button>}
+            </Box>
+          </Box>
+          <TextField
+            InputLabelProps={{ shrink:true}}
+            type="text"
+            label={
+              <> Full name <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span> </>
+            }
+            variant="outlined"
+            {...register("name")}
+            fullWidth
+            margin="normal"
+          />
+          <FormControl component="fieldset" fullWidth margin="normal">
+            <FormLabel component="legend" sx={{ marginLeft: 2 }}>Gender</FormLabel>
+            <RadioGroup row defaultValue={gender}>
+              <FormControlLabel
+                  value="male"
+                  control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
+                  label="Male"
+              />
+              <FormControlLabel
+                  value="female"
+                  control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
+                  label="Female"
+              />
+              <FormControlLabel
+                  value="others"
+                  control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
+                  label="Others"
+              />
+            </RadioGroup>
+          </FormControl>
+          <TextField 
+            InputLabelProps={{shrink:true}}
+            type="date"
+            label={ <> Date of Birth </> }
+            variant="outlined"
+            {...register("dob")}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            type="text"
+            InputLabelProps={{ shrink:true}}
+            label={ <> Mobile No <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span> </> }
+            variant="outlined"
+            {...register("mobileNo")}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            type="text"
+            InputLabelProps={{ shrink:true}}
+            label={ <> Email Id <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span> </> }
+            variant="outlined"
+            {...register("email")}
+            fullWidth
+            margin="normal"
+          />
+          <TextField
+            type="text"
+            InputLabelProps={{ shrink:true}}
+            label={ <> Address <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span> </> }
+            variant="outlined"
+            {...register("address")}
+            fullWidth
+            margin="normal"
+          />
+          </CardContent>
+        </Card>
 
-       if(res.status==="success")
-       {
-         setLoading(false)
-
-         // Safely set localStorage only on client side
-         if (typeof window !== 'undefined') {
-           localStorage.setItem("profileId", JSON.stringify(res.id))
-         }
-         toast.success("Profile Created Successfully!")
-         handleCreate(true)
-         handleClose()
-         reset();
-       }
-       else {
-
-         setLoading(false)
-         toast.error(res.message)
-
-       }
-     })
-     .catch((error) => console.error(error));
-};   
-
-  return ( 
-
-
-    <form onSubmit={handleSubmit(onSubmit)}>
-
-    <Grid container columnSpacing={2}>
-
-      <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-        <TextField
-          type="text"
-          label={
-            <>
-              Full name <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-            </>
-          }
-          variant="outlined"
-          {...register("name")}
-          error={!!errors.name}
-          fullWidth
-          margin="normal"
-        />
-        <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-          {errors.name?.message}
-        </div>
-      </Grid>
-      
-      <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-
-      <FormControl component="fieldset" fullWidth margin="normal" error={!!errors.gender}>
-            <FormLabel component="legend" sx={{ marginLeft: 2 }}>Gender <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span></FormLabel>
-            <RadioGroup row>
-                <FormControlLabel
-                    value="male"
-                    control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
-                    label="Male"
-                    error={!!errors.gender}
-                />
-                <FormControlLabel
-                    value="female"
-                    control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
-                    label="Female"
-                    error={!!errors.gender}
-                />
-                <FormControlLabel
-                    value="others"
-                    control={<Radio sx={{ marginLeft: 2 }} {...register("gender")} />}
-                    label="Others"
-                    error={!!errors.gender}
-                />
-            </RadioGroup>
-            <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                {errors.gender?.message}
-            </div>
-                    </FormControl>
-                    </Grid>
-
-              <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-                <TextField
-                  type="number"
-                  label={
-                    <>
-                      Mobile No <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                    </>
-                  }
-                  variant="outlined"
-                  {...register("mobileNo")}
-                  error={!!errors.mobileNo}
-                  fullWidth
-                  margin="normal"
-                />
-                <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                  {errors.mobileNo?.message}
-                </div>
-              </Grid>
-
-          <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-            <TextField
-              type="text"
-              label={
-                <>
-                  Email Id <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                </>
-              }
-              variant="outlined"
-              {...register("email")}
-              error={!!errors.email}
-              fullWidth
-              margin="normal"
-            />
-            <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-              {errors.email?.message}
-            </div>
-          </Grid>
-
-          <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-
-          <TextField InputLabelProps={{shrink:true}}
-                type="date"
-                label={
-                    <>
-                    Date of Birth <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                    </>
-                }
-                variant="outlined"
-                {...register("dob")}
-                error={!!errors.dob}
-                fullWidth
-                margin="normal"
-            />
-                <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                {errors.dob?.message}
-                </div>
-
-              </Grid> 
-
-             
-
-              <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-             
-              <TextField InputLabelProps={{shrink:true}}
-                    type="file"
-                    label={
-                        <>
-                        Profile Photo <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                        </>
-                    }
-                    inputProps={{ accept: "image/*" }} 
-                    variant="outlined"
-                    {...register("profilePhoto")}
-                    error={!!errors.profilePhoto}
-                    fullWidth
-                    margin="normal"
-                />
-                    <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                    {errors.profilePhoto?.message}
-                    </div>
-
-              </Grid>
-
-              <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-                
-                <TextField
-              type="password"
-              label={
-                <>
-               Enter New Password <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                </>
-            }
-              variant="outlined"
-              {...register("password")}
-              error={!!errors.password}
-                fullWidth
-                    margin="normal"
-              />
-              <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                {errors.password?.message}
-              </div>
-
-              </Grid> 
-
-              <Grid size={{xs:12, sm:isSmScreen?12:6, md:6}}>
-
-              <TextField
-              type="password"
-              label={
-                <>
-               Confirm New Password <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-                </>
-            }
-             
-              variant="outlined"
-              {...register("confirmpassword")}
-              error={!!errors.confirmpassword}
-              fullWidth
-              margin="normal"
-            />
-              <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-                {errors.confirmpassword?.message}
-              </div>
-
-              </Grid> 
-      
-       <Grid size={{xs:12, sm:12, md:12}}>
-        <TextField
-   
-            InputLabelProps={{ shrink:true}}
-          label={
-            <>
-               Address <span style={{ color: "rgba(240, 68, 56, 1)" }}>*</span>
-            </>
-          }
-          multiline
-          variant="outlined"
-          {...register("address")}
-          error={!!errors.address}
-          fullWidth
-          margin="normal"
-        />
-        <div style={{ color: "rgba(240, 68, 56, 1)", fontSize: "0.8rem" }}>
-          {errors.address?.message}
-        </div>
-      </Grid>
-     
-    </Grid>
-
-    <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
-      <Button onClick={handleClose} className="secondary_button">
-        Cancel
-      </Button>
-      <Button type="submit" className="primary_button">
-
-      {loading ? (
-   <>
-     <CircularProgress size={18} 
-      style={{ marginRight: 8, color: "#fff" }} />
-            Submitting
-        </>
-        ) : (
-        "Submit"
-        )}
-
-      </Button>
-    </Box>
-  </form>
-
-  );
+        <CommonDialog
+          open={openData ||  editShow }
+          onClose={handleClose}
+          dialogTitle={
+            openData
+              ? "Create Profile"
+              : editShow
+              ? "Edit Profile"
+              : ""
+          }
+          dialogContent={
+            openData ? (
+              <CreateProfile handleCreate={handleCreate}  handleClose={handleClose} />
+            ) : editShow ? (
+              <EditProfile
+                editData={editData}
+                handleUpdate={handleUpdate}
+                handleClose={handleClose}
+              />
+            ) : null
+          }
+        />
+      </Box>
+      </Layout>
+     </>}
+    </>
+  );
 };
 
-export default CreateProfile;
+export default Profile;
