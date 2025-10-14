@@ -190,18 +190,6 @@ const LeaveRequest = () => {
 
       <ToastContainer />
 
-      {/* Filter Buttons */}
-      <div>
-        <Button variant="outlined" onClick={() => filterData("today")}>
-          Today
-        </Button>
-        <Button onClick={() => filterData("thisWeek")}>This Week</Button>
-        <Button onClick={() => filterData("lastWeek")}>Last Week</Button>
-        <Button onClick={() => filterData("thisMonth")}>This Month</Button>
-        <Button onClick={() => filterData("lastMonth")}>Last Month</Button>
-        <Button onClick={() => filterData("thisYear")}>This Year</Button>
-      </div>
-
       <Box className="container">
         {/* Search + Apply Button */}
         <Search
@@ -209,6 +197,16 @@ const LeaveRequest = () => {
           buttonText="Apply Leave"
           onAddClick={() => toast.info("Apply Leave Clicked")}
         />
+
+        {/* Filter Buttons */}
+        <div style={{ margin: "16px 0"}}>
+          <Button variant="outlined" onClick={() => filterData("today")}>Today</Button>
+          <Button onClick={() => filterData("thisWeek")}>This Week</Button>
+          <Button onClick={() => filterData("lastWeek")}>Last Week</Button>
+          <Button onClick={() => filterData("thisMonth")}>This Month</Button>
+          <Button onClick={() => filterData("lastMonth")}>Last Month</Button>
+          <Button onClick={() => filterData("thisYear")}>This Year</Button>
+        </div>
 
         {/* Table */}
         <Paper sx={{ width: "100%", overflow: "hidden" }}>

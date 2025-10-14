@@ -99,19 +99,27 @@ const LiveClass = () => {
   }, [loading]);
 
   const createData = (
-    si,
-    row,
-    studentName,
-    enrollmentNo,
-    subjectName,
-    teacherName
+    Title,
+    Description,
+    CourseName,
+    TeacherName,
+    Date,
+    Timing,
+    Duration,
+    MeetingLink,
+    Status,
+    Action,
   ) => ({
-    si,
-    row,
-    studentName,
-    enrollmentNo,
-    subjectName,
-    teacherName,
+    Titile,
+    Description,
+    CourseName,
+    TeacherName,
+    Date,
+    Timing,
+    Duration,
+    MeetingLink,
+    Status,
+    Action,
     action: (
       <>
         <IconButton
@@ -140,10 +148,12 @@ const LiveClass = () => {
   useEffect(() => {
     const filtered = rows.filter(
       (row) =>
-        row.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.enrollmentNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.subjectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        row.teacherName.toLowerCase().includes(searchTerm.toLowerCase())
+        row.Title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.Description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.CourseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        row.TeacherName.toLowerCase().includes(searchTerm.toLowerCase())||
+        row.Date.toLowerCase().includes(searchTerm.toLowerCase())||
+        row.Date.toLowerCase
     );
     setFilteredRows(filtered);
   }, [searchTerm, rows]);
